@@ -1,17 +1,15 @@
 package org.kafka.sample;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
-public class ProducerDemo {
+public class ProducerDemoWithCallbacks {
 
-    private static final Logger log = LoggerFactory.getLogger(ProducerDemo.class.getSimpleName());
+    private static final Logger log = LoggerFactory.getLogger(ProducerDemoWithCallbacks.class.getSimpleName());
 
     public static void main(String[] args) {
         log.info("start kafka producer!!");
@@ -27,14 +25,33 @@ public class ProducerDemo {
         KafkaProducer<String, String> producer = new KafkaProducer<>(prop);
 
         // Create a producer record
-        ProducerRecord<String, String> producerRecord =
-                new ProducerRecord<>(topic, "istanbulda sıcaklık 30 derece");
+        for (int i=0; i<50; i++){
+            ProducerRecord<String, String> producerRecord =
+                    new ProducerRecord<>(topic, "istanbulda sıcaklık " + i + "derece");
 
-        // Send data   -- asyncronous
-        producer.send(producerRecord);
+            // Send data   -- asyncronous
+            producer.send(producerRecord, new Callback() {
+                // execute when a message is successfully received
+                @Override
+                public void onCompletion(RecordMetadata metadata, Exception e) {
+                    if (e == null) {
+                        log.info ("Received message is :" + "\n" +
+                                  "Topic : " + metadata.topic() + "\n" +
+                                  "Partition : " + metadata.partition() + "\n" +
+                                  "Offset : " + metadata.offset() + "\n" +
+                                  "Timestamp : " + metadata.timestamp() + "\n" +
+                                  "Value : " + producerRecord.value()
+                                );
+                    } else {
+                        log.error("An error occurred", e);
+                    }
+                }
+            });
+        }
+
         log.info("Send the message from producer");
 
-        // Flush and close the producer  --synrounous
+        // Flush and close the producer  --syncrounous
 
         // Invoking this method makes all buffered records immediately available to send (even if <code>linger.ms</code> is
         // greater than 0) and blocks on the completion of the requests associated with these records.
