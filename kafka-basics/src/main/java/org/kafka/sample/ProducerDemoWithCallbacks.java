@@ -25,9 +25,9 @@ public class ProducerDemoWithCallbacks {
         KafkaProducer<String, String> producer = new KafkaProducer<>(prop);
 
         // Create a producer record
-        for (int i=0; i<50; i++){
+        for (int i=0; i<10; i++){
             ProducerRecord<String, String> producerRecord =
-                    new ProducerRecord<>(topic, "istanbulda sıcaklık " + i + "derece");
+                    new ProducerRecord<>(topic, "istanbulda sıcaklık " + i + " derece");
 
             // Send data   -- asyncronous
             producer.send(producerRecord, new Callback() {
@@ -40,6 +40,7 @@ public class ProducerDemoWithCallbacks {
                                   "Partition : " + metadata.partition() + "\n" +
                                   "Offset : " + metadata.offset() + "\n" +
                                   "Timestamp : " + metadata.timestamp() + "\n" +
+                                  "Key : " + producerRecord.value() + "\n" +
                                   "Value : " + producerRecord.value()
                                 );
                     } else {
@@ -47,16 +48,22 @@ public class ProducerDemoWithCallbacks {
                     }
                 }
             });
+            try {
+                Thread.sleep(3000);
+            } catch( InterruptedException e) {
+                e.printStackTrace();
+            }
+            producer.flush();
         }
 
         log.info("Send the message from producer");
+
 
         // Flush and close the producer  --syncrounous
 
         // Invoking this method makes all buffered records immediately available to send (even if <code>linger.ms</code> is
         // greater than 0) and blocks on the completion of the requests associated with these records.
         // A request is considered completed when it is successfully acknowledged
-        producer.flush();
 
         // This method waits up to <code>timeout</code> for the producer to complete the sending of all incomplete requests.
         // If the producer is unable to complete all requests before the timeout expires, this method will fail
